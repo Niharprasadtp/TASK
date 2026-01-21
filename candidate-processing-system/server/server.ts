@@ -1,12 +1,13 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express from 'express';
 import cors from 'cors';
+// FIX 1: Removed ', Candidate' from here
 import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 import cron from 'node-cron';
 import axios from 'axios';
-import dotenv from 'dotenv';
-
-dotenv.config();
 
 const app = express();
 const prisma = new PrismaClient();
@@ -15,7 +16,7 @@ const PORT = process.env.PORT || 4000;
 app.use(cors());
 app.use(express.json());
 
-// Zod Schema for Candidate
+// --- Zod Schema ---
 const candidateSchema = z.object({
     name: z.string().min(1, 'Name is required'),
     email: z.string().email('Invalid email'),
@@ -24,13 +25,26 @@ const candidateSchema = z.object({
     dob: z.string().optional().or(z.literal('')),
 });
 
-// API Routes
+// --- Helper: Convert YYYY-MM-DD to DD/MM/YYYY ---
+const formatDateToDDMMYYYY = (dateStr: string | null): string | null => {
+    if (!dateStr) return null;
+    try {
+        if (dateStr.includes('/') && dateStr.split('/')[2].length === 4) return dateStr;
+        const parts = dateStr.split('-');
+        if (parts.length === 3) {
+            const [year, month, day] = parts;
+            return `${day}/${month}/${year}`;
+        }
+        return dateStr;
+    } catch (e) {
+        return dateStr;
+    }
+};
+
+// --- API Routes ---
 app.post('/api/candidates', async (req, res) => {
     try {
         const data = candidateSchema.parse(req.body);
-
-        // Check if email already exists? Requirement doesn't say, but good practice.
-        // For now, adhering strictly to "Ingestion... Saves to DB with status PENDING"
 
         const candidate = await prisma.candidate.create({
             data: {
@@ -67,22 +81,15 @@ app.get('/api/candidates/success', async (req, res) => {
     }
 });
 
-// Worker (Cron Job)
+// --- Worker (Cron Job) ---
 const processCandidates = async () => {
     console.log('Running Candidate Processing Worker...');
 
     try {
-        // Fetch oldest 10 records with status PENDING or FAILED
         const candidates = await prisma.candidate.findMany({
-            where: {
-                status: {
-                    in: ['PENDING', 'FAILED']
-                }
-            },
+            where: { status: { in: ['PENDING', 'FAILED'] } },
             take: 10,
-            orderBy: {
-                createdAt: 'asc'
-            }
+            orderBy: { createdAt: 'asc' }
         });
 
         if (candidates.length === 0) {
@@ -90,78 +97,71 @@ const processCandidates = async () => {
             return;
         }
 
-        console.log(`Processing ${candidates.length} candidates...`);
+        console.log(`Processing batch of ${candidates.length} candidates...`);
 
-        // Process each candidate
-        for (const candidate of candidates) {
-            try {
-                // Send to external API
-                // Payload structure isn't defined in prompt, assuming strict mapping of candidate fields.
-                // "validates it -> Saves to DB"
-                // "sends them to this external API"
+        const payload = candidates.map((candidate: any) => ({
+            id: candidate.id,
+            name: candidate.name,
+            email: candidate.email,
+            phoneNumber: candidate.phoneNumber,
+            link: candidate.link,
+            dob: formatDateToDDMMYYYY(candidate.dob),
+        }));
 
-                const payload = {
-                    name: candidate.name,
-                    email: candidate.email,
-                    phoneNumber: candidate.phoneNumber,
-                    link: candidate.link,
-                    dob: candidate.dob,
-                    // external API likely wants these.
-                };
+        try {
+            const externalApiUrl = process.env.EXTERNAL_API_URL;
+            if (!externalApiUrl) {
+                throw new Error("EXTERNAL_API_URL is not defined in environment variables");
+            }
+            const response = await axios.post(externalApiUrl, payload);
 
-                const response = await axios.post('https://dev.micro.mgsigma.net/batch/process', payload);
+            console.log(`API Response Status: ${response.status}`);
 
-                if (response.status === 200 || response.status === 201) { // Assuming 200/201 is success
-                    // Wait, constraint says "If External API returns SUCCESS". 
-                    // Usually this means 2xx or specific body field. 
-                    // Prompt: "If External API returns SUCCESS: Update DB status to SUCCESS and save the externalId."
-                    // I'll assume response body has status or just HTTP success.
-                    // Given "externalId", the response likely contains it.
+            const results = Array.isArray(response.data) ? response.data : [response.data];
 
-                    // Let's assume response.data contains { status: 'SUCCESS', externalId: 123 } or similar.
-                    // Since I don't know the external API spec, I'll log response and try to find externalId.
-                    // Fallback: if 200 OK, mark SUCCESS.
+            for (const result of results) {
+                const resultId = result.id || result.externalId;
 
-                    // Logic update based on prompt: "save the externalId" implies it is returned.
-
-                    const externalId = response.data.externalId || response.data.id || null;
-
+                if (result.status === 'SUCCESS' && resultId) {
                     await prisma.candidate.update({
-                        where: { id: candidate.id },
+                        where: { id: Number(resultId) },
                         data: {
                             status: 'SUCCESS',
-                            externalId: externalId ? parseInt(externalId) : undefined
+                            externalId: Number(resultId)
                         }
                     });
-                    console.log(`Candidate ${candidate.id} processed successfully. External ID: ${externalId}`);
-
+                    console.log(`Candidate ${resultId} marked as SUCCESS.`);
                 } else {
-                    throw new Error(`API returned status ${response.status}`);
+                    console.warn(`Candidate ${resultId} failed or pending. Status: ${result.status}`);
                 }
-
-            } catch (err: any) {
-                console.error(`Failed to process candidate ${candidate.id}:`, err.message);
-
-                await prisma.candidate.update({
-                    where: { id: candidate.id },
-                    data: { status: 'FAILED' }
-                });
             }
+
+        } catch (apiError: any) {
+            console.error('Batch API Request Failed.');
+
+            if (apiError.response) {
+                console.error('Server Error Details:', JSON.stringify(apiError.response.data, null, 2));
+            } else {
+                console.error('Error Message:', apiError.message);
+            }
+
+            await prisma.candidate.updateMany({
+                where: { id: { in: candidates.map((c: any) => c.id) } },
+                data: { status: 'FAILED' }
+            });
         }
 
     } catch (error) {
-        console.error('Error in worker:', error);
+        console.error('Internal Worker Error:', error);
     }
 };
 
-// Schedule Cron Job: Every 2 hours
-// "0 */2 * * *"
+// --- Scheduler ---
 cron.schedule('0 */2 * * *', processCandidates);
 
-// Start server
+// --- Server Start ---
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
 });
 
-// Export for verification if needed
 export { app, processCandidates };
