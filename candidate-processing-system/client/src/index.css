@@ -1,1 +1,22 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
+
+body {
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Google Style Phone Input Overrides */
+.google-phone-input .PhoneInputInput {
+    background-color: transparent;
+    border: none;
+    outline: none;
+    font-size: 0.875rem;
+    padding-left: 10px;
+}
+
+.google-phone-input .PhoneInputInput:focus {
+    outline: none;
+    box-shadow: none;
+}
