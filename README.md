@@ -135,6 +135,7 @@ The application will be available at `http://localhost:5173`
 | :--- | :--- | :--- |
 | POST | `/api/candidates` | Create a new candidate application |
 | GET | `/api/candidates` | Fetch all candidates (with filters) |
+| GET | `/health` | Health check route |
 
 ---
 
