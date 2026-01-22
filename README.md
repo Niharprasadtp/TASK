@@ -46,7 +46,6 @@ A robust, production-ready Mono-repo application designed to manage candidate ap
 
 ### **DevOps**
 * **Hosting:** Vercel (Client), Render (Server)
-* **CI/CD:** Automated deployments via Git hooks
 
 ---
 
