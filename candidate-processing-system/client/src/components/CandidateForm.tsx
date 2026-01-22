@@ -10,13 +10,15 @@ import PhoneInput, { isValidPhoneNumber } from 'react-phone-number-input';
 const candidateSchema = z.object({
     name: z.string().min(1, 'Name is required'),
     email: z.string().email('Invalid email address'),
-    // Validate using the library's utility
     phoneNumber: z.string().refine((val) => val && isValidPhoneNumber(val), {
         message: 'Invalid phone number',
     }),
     link: z.string().url('Must be a valid URL (https://...)').optional().or(z.literal('')),
     dob: z.string().optional().or(z.literal('')),
 });
+
+
+
 
 type CandidateFormData = z.infer<typeof candidateSchema>;
 
@@ -49,6 +51,11 @@ const CandidateForm: React.FC = () => {
         }
     };
 
+
+
+
+
+
     // --- Reusable "Google Style" Input Component ---
     const FloatingLabelInput = ({ label, error, registration, type = "text" }: any) => (
         <div className="relative z-0 w-full mb-6 group">
@@ -61,7 +68,8 @@ const CandidateForm: React.FC = () => {
                     : 'border-gray-300 focus:border-blue-600'
                     }`}
             />
-            <label className={`peer-focus:font-medium absolute text-sm duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:left-0 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6 ${error ? 'text-red-600' : 'text-gray-500 peer-focus:text-blue-600'
+            {/* FIX: Changed -z-10 to z-10 and added pointer-events-none */}
+            <label className={`peer-focus:font-medium absolute text-sm duration-300 transform -translate-y-6 scale-75 top-3 z-10 origin-[0] pointer-events-none peer-focus:left-0 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6 ${error ? 'text-red-600' : 'text-gray-500 peer-focus:text-blue-600'
                 }`}>
                 {label}
             </label>
