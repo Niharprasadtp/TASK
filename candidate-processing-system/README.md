@@ -1,95 +1,171 @@
-# Candidate Processing System
+# 🚀 Candidate Processing System
 
-A production-ready Mono-repo project implementing a "Polling Publisher" system.
+![Status](https://img.shields.io/badge/Status-Production%20Ready-success)
+![License](https://img.shields.io/badge/License-MIT-blue)
+![Stack](https://img.shields.io/badge/Stack-PERN-lightgrey)
 
-## Live Demo
-- **Frontend (Vercel)**: [https://task-seven-gamma-80.vercel.app/](https://task-seven-gamma-80.vercel.app/)
-- **Backend (Render)**: Hosted on Render
-- **Database (Neon)**: Hosted on Neon (PostgreSQL)
+A robust, production-ready Mono-repo application designed to manage candidate applications efficiently. It features a **"Polling Publisher"** architecture that ensures reliable data synchronization with external systems using automated background workers.
 
-## Tech Stack
-- **Frontend**: React, Vite, Tailwind CSS, React Query, React Hook Form, Zod.
-- **Backend**: Node.js, Express, TypeScript, Zod, node-cron.
-- **Database**: PostgreSQL, Prisma ORM.
-- **Deployment**: Vercel (Client), Render (Server), Neon (Database).
+---
 
-## Project Structure
-- `/client`: Frontend application.
-- `/server`: Backend API and Worker.
+## 🌐 Live Demo
 
-## Prerequisites
-- Node.js installed.
-- PostgreSQL database (Local or Cloud like Neon).
+| Service | Link | Status |
+| :--- | :--- | :--- |
+| **Frontend** | [View on Vercel](https://task-seven-gamma-80.vercel.app/) | ![Live](https://img.shields.io/badge/Online-brightgreen) |
+| **Backend** | [API Health Check](https://task-0a5g.onrender.com) | ![Live](https://img.shields.io/badge/Online-brightgreen) |
 
-## Setup Instructions
+> **⚠️ Note on Free Tier Hosting:** The backend is hosted on Render's free tier, which sleeps after inactivity. The **first request may take ~50 seconds** to wake up the server. Subsequent requests will be instant.
 
-### 1. Database Configuration
-1.  Navigate to the `server` directory.
-2.  Open or create the `.env` file.
-3.  Set your `DATABASE_URL`:
-    ```env
-    DATABASE_URL="postgresql://user:password@host:port/database?sslmode=require"
-    ```
+---
 
-### 2. Backend Setup
-1.  Navigate to the `server` directory:
-    ```bash
-    cd server
-    ```
-2.  Install dependencies:
-    ```bash
-    npm install
-    ```
-3.  Generate Prisma Client:
-    ```bash
-    npx prisma generate
-    ```
-4.  Start the server:
-    ```bash
-    npm run dev
-    ```
-    The server runs on `http://localhost:4000`.
+## ✨ Key Features
 
-### 3. Frontend Setup
-1.  Navigate to the `client` directory:
-    ```bash
-    cd client
-    ```
-2.  Install dependencies:
-    ```bash
-    npm install
-    ```
-3.  Create a `.env` file in the `client` directory and add the backend API URL:
-    ```env
-    VITE_BACKEND_API="http://localhost:4000/api"
-    ```
-4.  Start the client:
-    ```bash
-    npm run dev
-    ```
-    The client runs on `http://localhost:5173`.
+* **⚡ Modern Dashboard:** A clean, responsive React UI for submitting and tracking applications.
+* **🛡️ Robust Validation:** End-to-end type safety using **Zod** and **TypeScript**.
+* **🔄 Automated Workers:** A custom cron job (Polling Publisher) runs every 2 hours to process pending candidates reliably.
+* **💾 Database Sync:** Seamless integration with **PostgreSQL** via **Prisma ORM**.
+* **🚀 Scalable Architecture:** Layered backend design (Controllers, Services, Repositories) ensures maintainability.
 
-## Features
-- **Ingestion**: Submit candidate details via the frontend form. Validate and save to DB (Status: PENDING).
-- **Worker**: Runs every 2 hours (or configured interval) to fetch PENDING/FAILED records and push them to the external API.
-- **Dashboard**: View successfully processed candidates.
+---
 
-## Deployment Guide
+## 🛠️ Tech Stack
 
-### Database (Neon)
-1.  Create a project on Neon.tech.
-2.  Get the connection string (Pooled version recommended for serverless/Edge contexts).
+### **Frontend**
+* **Framework:** React (Vite)
+* **Styling:** Tailwind CSS
+* **State Management:** React Query
+* **Forms:** React Hook Form + Zod
+
+### **Backend**
+* **Runtime:** Node.js
+* **Framework:** Express.js
+* **Database:** PostgreSQL (Hosted on Neon)
+* **ORM:** Prisma
+* **Scheduler:** node-cron
+
+### **DevOps**
+* **Hosting:** Vercel (Client), Render (Server)
+* **CI/CD:** Automated deployments via Git hooks
+
+---
+
+## 📂 Project Architecture
+
+The project is structured as a **Mono-repo** containing both the React Client and Node.js Server.
+
+```bash
+candidate-processing-system/
+├── client/                 # React Frontend (Vite + Tailwind)
+│   ├── src/
+│   │   ├── components/     # UI Components (Forms, Dashboard)
+│   │   ├── lib/            # API configurations
+│   │   └── App.tsx         # Routing & Layouts
+│
+├── server/                 # Node.js Backend (Express + TypeScript)
+│   ├── src/
+│   │   ├── config/         # DB Connection & Env Config
+│   │   ├── controllers/    # Request handling logic
+│   │   ├── routes/         # API Routes Definitions
+│   │   ├── schemas/        # Zod Validation Schemas
+│   │   ├── services/       # Business logic & Cron Workers
+│   │   ├── prisma/         # Database Schema & Migrations
+│   │   └── server.ts       # App Entry Point
+```
+
+---
+
+## 🚀 Getting Started Locally
+
+Follow these steps to run the project locally.
+
+### Prerequisites
+- Node.js (v18+)
+- PostgreSQL database URL (Local or Cloud like Neon/Supabase)
+
+### 1️⃣ Backend Setup
+Navigate to the server folder:
+```bash
+cd server
+```
+Install dependencies:
+```bash
+npm install
+```
+Create a `.env` file and add your database connection string:
+```env
+DATABASE_URL="postgresql://user:password@host:port/database?sslmode=require"
+PORT=4000
+```
+Generate Prisma Client & Push Schema:
+```bash
+npx prisma generate
+npx prisma db push
+```
+Start the server:
+```bash
+npm run dev
+```
+The server will start at `http://localhost:4000`
+
+### 2️⃣ Frontend Setup
+Open a new terminal and navigate to the client folder:
+```bash
+cd ../client
+```
+Install dependencies:
+```bash
+npm install
+```
+Create a `.env` file:
+```env
+VITE_BACKEND_API="http://localhost:4000/api"
+```
+Start the frontend:
+```bash
+npm run dev
+```
+The application will be available at `http://localhost:5173`
+
+---
+
+## 📡 API Reference
+
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| POST | `/api/candidates` | Create a new candidate application |
+| GET | `/api/candidates` | Fetch all candidates (with filters) |
+| GET | `/` | Health check route |
+
+---
+
+## 🔧 Deployment Configuration
 
 ### Backend (Render)
-1.  Connect your repository to Render.
-2.  Select "Web Service".
-3.  Set Root Directory to `server`.
-4.  Build Command: `npm install && npx prisma generate && npm run build`.
-5.  Start Command: `npm start`.
-6.  Add Environment Variables: `DATABASE_URL`, `PORT`.
+- **Root Directory:** `server`
+- **Build Command:** `npm install && npx prisma generate && npx prisma db push`
+- **Start Command:** `npm start`
+- **Environment Variables:** `DATABASE_URL`, `PORT`
 
 ### Frontend (Vercel)
-1.  Import the repository to Vercel.
-2.  Set Root Directory to `client`.
-3.  Add Environment Variable: `VITE_BACKEND_API` (set to your Render Backend URL).
-4.  Deploy.
+- **Root Directory:** `client`
+- **Framework Preset:** Vite
+- **Environment Variables:** `VITE_BACKEND_API` (Your Render URL)
+- **Routing:** Includes `vercel.json` to handle client-side routing (fixes 404 on refresh).
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Please follow these steps:
+1. Fork the project.
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`).
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`).
+4. Push to the branch (`git push origin feature/AmazingFeature`).
+5. Open a Pull Request.
+
+---
+
+## 📄 License
+
+Distributed under the MIT License. See LICENSE for more information.
