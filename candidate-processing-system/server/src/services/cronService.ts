@@ -72,5 +72,5 @@ export const processCandidates = async () => {
 };
 
 export const startCronJob = () => {
-    cron.schedule('* * * * *', processCandidates);
+    cron.schedule('0 */2 * * *', processCandidates);
 };
